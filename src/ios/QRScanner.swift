@@ -12,9 +12,10 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         
         func addOverlayLayer() {
             let scanLine = CAShapeLayer();
-            scanLine.path = UIBezierPath(rect: CGRect(x: self.bounds.minX + 30, y: self.bounds.maxY/2, width: self.bounds.width - 60, height: 2)).cgPath;
+            scanLine.path = UIBezierPath(rect: CGRect(x: self.bounds.minX + 30, y: self.bounds.maxY/2, width: self.bounds.width - 60, height: 4)).cgPath;
             scanLine.strokeColor = UIColor.red.cgColor;
             scanLine.backgroundColor = UIColor.clear.cgColor;
+            scanLine.fillColor = UIColor.red.cgColor;
             self.layer.addSublayer(scanLine);
             
             let mainBorder = CAShapeLayer();
