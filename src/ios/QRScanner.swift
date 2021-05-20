@@ -22,6 +22,10 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
             }
         }
 
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            return false;
+        }
+
         override func layoutSubviews() {
             super.layoutSubviews();
             if let sublayers = self.layer.sublayers {
@@ -50,6 +54,13 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     }
 
     var cameraView: CameraView!
+    // Default camera position and size
+    var _x: Int = 0;
+    var _y: Int = 0;
+    var _width: Int = UIScreen.main.bounds.width;
+    var _height: Int = UIScreen.main.bounds.height;
+    var _above: Int = 0;
+    //
     var captureSession:AVCaptureSession?
     var captureVideoPreviewLayer:AVCaptureVideoPreviewLayer?
     var metaOutput: AVCaptureMetadataOutput?
@@ -87,8 +98,8 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     override func pluginInitialize() {
         super.pluginInitialize()
         NotificationCenter.default.addObserver(self, selector: #selector(pageDidLoad), name: NSNotification.Name.CDVPageDidLoad, object: nil)
-        self.cameraView = CameraView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
-        self.cameraView.autoresizingMask = [.flexibleWidth, .flexibleHeight];
+        // self.cameraView = CameraView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
+        // self.cameraView.autoresizingMask = [.flexibleWidth, .flexibleHeight];
     }
 
     func sendErrorCode(command: CDVInvokedUrlCommand, error: QRScannerError){
@@ -131,8 +142,13 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         }
         do {
             if (captureSession?.isRunning != true){
+                self.cameraView = CameraView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
                 cameraView.backgroundColor = UIColor.clear
-                self.webView!.superview!.insertSubview(cameraView, belowSubview: self.webView!)
+                if(_above == 0) {
+                    self.webView!.superview!.insertSubview(cameraView, belowSubview: self.webView!)
+                } else if(_above = 1) {
+                    self.webView!.superview!.insertSubview(cameraView, aboveSubview: self.webView!)
+                }
                 let availableVideoDevices =  AVCaptureDevice.devices(for: AVMediaType.video)
                 for device in availableVideoDevices {
                     if device.position == AVCaptureDevice.Position.back {
@@ -273,6 +289,11 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     }
 
     @objc func scan(_ command: CDVInvokedUrlCommand){
+        _x = command.arguments[0] as! Int
+        _y = command.arguments[1] as! Int
+        _width = command.arguments[2] as! Int
+        _height = command.arguments[3] as! Int
+        _above = command.arguments[4] as! Int
         if(self.prepScanner(command: command)){
             nextScanningCommand = command
             scanning = true
