@@ -57,8 +57,8 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     // Default camera position and size
     var _x: Int = 0;
     var _y: Int = 0;
-    var _width: Int = UIScreen.main.bounds.width;
-    var _height: Int = UIScreen.main.bounds.height;
+    var _width: Int = 200;
+    var _height: Int = 200;
     var _above: Int = 0;
     //
     var captureSession:AVCaptureSession?
@@ -146,7 +146,7 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 cameraView.backgroundColor = UIColor.clear
                 if(_above == 0) {
                     self.webView!.superview!.insertSubview(cameraView, belowSubview: self.webView!)
-                } else if(_above = 1) {
+                } else if(_above == 1) {
                     self.webView!.superview!.insertSubview(cameraView, aboveSubview: self.webView!)
                 }
                 let availableVideoDevices =  AVCaptureDevice.devices(for: AVMediaType.video)
