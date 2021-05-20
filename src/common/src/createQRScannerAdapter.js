@@ -168,7 +168,7 @@ return {
     var success = function(result) {
       callback(null, result);
     };
-    cordova.exec(success, errorCallback(callback), 'QRScanner', 'scan', [rect.left, rect.top, rect.width, rect.height, above ? above : 0]);
+    cordova.exec(success, errorCallback(callback), 'QRScanner', 'scan', [rect.left, rect.top, rect.width, rect.height, above ? 1 : 0]);
   },
   cancelScan: function(callback) {
     cordova.exec(doneCallback(callback), null, 'QRScanner', 'cancelScan', []);
