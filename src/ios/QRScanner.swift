@@ -441,20 +441,19 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
 
     @objc func destroy(_ command: CDVInvokedUrlCommand) {
         self.makeOpaque()
-        if(self.captureSession != nil){
+        if(self.overlayView != nil) {
             self.overlayView.removeOverlayLayer();
-            backgroundThread(delay: 0, background: {
-                self.captureSession!.stopRunning()
-                self.cameraView.removePreviewLayer()
-                self.captureVideoPreviewLayer = nil
-                self.metaOutput = nil
-                self.captureSession = nil
-                self.currentCamera = 0
-                self.frontCamera = nil
-                self.backCamera = nil
-            }, completion: {
-                self.getStatus(command)
-            })
+        }
+        if(self.captureSession != nil){
+            self.captureSession!.stopRunning()
+            self.cameraView.removePreviewLayer()
+            self.captureVideoPreviewLayer = nil
+            self.metaOutput = nil
+            self.captureSession = nil
+            self.currentCamera = 0
+            self.frontCamera = nil
+            self.backCamera = nil
+            self.getStatus(command)
         } else {
             self.getStatus(command)
         }
