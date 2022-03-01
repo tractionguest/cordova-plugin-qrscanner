@@ -160,7 +160,7 @@ return {
   destroy: function(callback) {
     cordova.exec(doneCallback(callback, true), null, 'QRScanner', 'destroy', []);
   },
-  scan: function(callback, element, above) {
+  scan: function(callback, element, above, hideOverlay) {
     if (!callback) {
       throw new Error('No callback provided to scan method.');
     }
@@ -168,7 +168,14 @@ return {
     var success = function(result) {
       callback(null, result);
     };
-    cordova.exec(success, errorCallback(callback), 'QRScanner', 'scan', [rect.left, rect.top, rect.width, rect.height, above ? 1 : 0]);
+    cordova.exec(success, errorCallback(callback), 'QRScanner', 'scan', [
+      rect.left,
+      rect.top,
+      rect.width,
+      rect.height,
+      above ? 1 : 0,
+      hideOverlay ? 1 : 0,
+    ]);
   },
   cancelScan: function(callback) {
     cordova.exec(doneCallback(callback), null, 'QRScanner', 'cancelScan', []);
