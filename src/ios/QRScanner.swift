@@ -183,14 +183,22 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         do {
             if (captureSession?.isRunning != true){
                 self.cameraView = CameraView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
-                self.overlayView = OverlayView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
+                if(_hideOverlay == 0) {
+                    self.overlayView = OverlayView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
+                }
                 cameraView.backgroundColor = UIColor.clear
-                overlayView.backgroundColor = UIColor.clear
+                if(_hideOverlay == 0) {
+                    overlayView.backgroundColor = UIColor.clear
+                }
                 if(_above == 0) {
                     self.webView!.superview!.insertSubview(cameraView, belowSubview: self.webView!)
-                    self.webView!.superview!.insertSubview(overlayView, belowSubview: self.webView!)
+                    if(_hideOverlay == 0) {
+                        self.webView!.superview!.insertSubview(overlayView, belowSubview: self.webView!)
+                    }
                 } else if(_above == 1) {
-                    self.webView!.superview!.insertSubview(overlayView, aboveSubview: self.webView!)
+                    if(_hideOverlay == 0) {
+                        self.webView!.superview!.insertSubview(overlayView, aboveSubview: self.webView!)
+                    }
                     self.webView!.superview!.insertSubview(cameraView, aboveSubview: self.webView!)
                 }
                 let availableVideoDevices =  AVCaptureDevice.devices(for: AVMediaType.video)
@@ -206,7 +214,9 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 if(backCamera == nil){
                     currentCamera = 1
                 }
-                overlayView.addOverlayLayer();
+                if(_hideOverlay == 0) {
+                    overlayView.addOverlayLayer();
+                }
                 let input: AVCaptureDeviceInput
                 input = try self.createCaptureDeviceInput()
                 captureSession = AVCaptureSession()
@@ -339,6 +349,7 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         _width = command.arguments[2] as! Int
         _height = command.arguments[3] as! Int
         _above = command.arguments[4] as! Int
+        _hideOverlay = command.arguments[5] as! Int
         if(self.prepScanner(command: command)){
             nextScanningCommand = command
             scanning = true
