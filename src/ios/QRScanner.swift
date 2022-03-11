@@ -100,6 +100,7 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     var _width: Int = 200;
     var _height: Int = 200;
     var _above: Int = 0;
+    var _hideOverlay: Int = 0;
     //
     var captureSession:AVCaptureSession?
     var captureVideoPreviewLayer:AVCaptureVideoPreviewLayer?

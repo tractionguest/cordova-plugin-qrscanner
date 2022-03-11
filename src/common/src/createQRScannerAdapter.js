@@ -169,10 +169,10 @@ return {
       callback(null, result);
     };
     cordova.exec(success, errorCallback(callback), 'QRScanner', 'scan', [
-      rect.left,
-      rect.top,
-      rect.width,
-      rect.height,
+      Math.round(rect.left),
+      Math.round(rect.top),
+      Math.round(rect.width),
+      Math.round(rect.height),
       above ? 1 : 0,
       hideOverlay ? 1 : 0,
     ]);
