@@ -3,6 +3,45 @@ import AVFoundation
 
 @objc(QRScanner)
 class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
+
+    class OverlayView: UIView {
+        
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            return false;
+        }
+        
+        func addOverlayLayer() {
+            let scanLine = CAShapeLayer();
+            scanLine.path = UIBezierPath(rect: CGRect(x: self.bounds.minX + 30, y: self.bounds.maxY/2, width: self.bounds.width - 60, height: 4)).cgPath;
+            scanLine.strokeColor = UIColor.red.cgColor;
+            scanLine.backgroundColor = UIColor.clear.cgColor;
+            scanLine.fillColor = UIColor.red.cgColor;
+            self.layer.addSublayer(scanLine);
+            
+            let mainBorder = CAShapeLayer();
+            mainBorder.path = UIBezierPath(rect: self.bounds).cgPath;
+            mainBorder.strokeColor = UIColor.white.cgColor;
+            mainBorder.backgroundColor = UIColor.clear.cgColor;
+            mainBorder.fillColor = UIColor.clear.cgColor;
+            self.layer.addSublayer(mainBorder);
+            
+            let subBorder = CAShapeLayer();
+            subBorder.path = UIBezierPath(rect: CGRect(x: self.bounds.minX + 30, y: self.bounds.minY + 30, width: self.bounds.width - 60, height: self.bounds.height - 60)).cgPath;
+            subBorder.strokeColor = UIColor.white.cgColor;
+            subBorder.fillColor = UIColor.clear.cgColor;
+            subBorder.backgroundColor = UIColor.clear.cgColor;
+            self.layer.addSublayer(subBorder);
+        }
+        
+        func removeOverlayLayer() {
+            if let sublayers = self.layer.sublayers {
+                for layer in sublayers {
+                    layer.removeFromSuperlayer();
+                }
+            }
+        }
+
+    }
     
     class CameraView: UIView {
         var videoPreviewLayer:AVCaptureVideoPreviewLayer?
@@ -20,6 +59,10 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
             default:
                 return AVCaptureVideoOrientation.portraitUpsideDown;
             }
+        }
+
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            return false;
         }
 
         override func layoutSubviews() {
@@ -50,6 +93,14 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     }
 
     var cameraView: CameraView!
+    var overlayView: OverlayView!
+    // Default camera position and size
+    var _x: Int = 0;
+    var _y: Int = 0;
+    var _width: Int = 200;
+    var _height: Int = 200;
+    var _above: Int = 0;
+    //
     var captureSession:AVCaptureSession?
     var captureVideoPreviewLayer:AVCaptureVideoPreviewLayer?
     var metaOutput: AVCaptureMetadataOutput?
@@ -87,8 +138,8 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     override func pluginInitialize() {
         super.pluginInitialize()
         NotificationCenter.default.addObserver(self, selector: #selector(pageDidLoad), name: NSNotification.Name.CDVPageDidLoad, object: nil)
-        self.cameraView = CameraView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
-        self.cameraView.autoresizingMask = [.flexibleWidth, .flexibleHeight];
+        // self.cameraView = CameraView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height))
+        // self.cameraView.autoresizingMask = [.flexibleWidth, .flexibleHeight];
     }
 
     func sendErrorCode(command: CDVInvokedUrlCommand, error: QRScannerError){
@@ -131,8 +182,17 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         }
         do {
             if (captureSession?.isRunning != true){
+                self.cameraView = CameraView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
+                self.overlayView = OverlayView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
                 cameraView.backgroundColor = UIColor.clear
-                self.webView!.superview!.insertSubview(cameraView, belowSubview: self.webView!)
+                overlayView.backgroundColor = UIColor.clear
+                if(_above == 0) {
+                    self.webView!.superview!.insertSubview(cameraView, belowSubview: self.webView!)
+                    self.webView!.superview!.insertSubview(overlayView, belowSubview: self.webView!)
+                } else if(_above == 1) {
+                    self.webView!.superview!.insertSubview(overlayView, aboveSubview: self.webView!)
+                    self.webView!.superview!.insertSubview(cameraView, aboveSubview: self.webView!)
+                }
                 let availableVideoDevices =  AVCaptureDevice.devices(for: AVMediaType.video)
                 for device in availableVideoDevices {
                     if device.position == AVCaptureDevice.Position.back {
@@ -146,6 +206,7 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 if(backCamera == nil){
                     currentCamera = 1
                 }
+                overlayView.addOverlayLayer();
                 let input: AVCaptureDeviceInput
                 input = try self.createCaptureDeviceInput()
                 captureSession = AVCaptureSession()
@@ -273,6 +334,11 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     }
 
     @objc func scan(_ command: CDVInvokedUrlCommand){
+        _x = command.arguments[0] as! Int
+        _y = command.arguments[1] as! Int
+        _width = command.arguments[2] as! Int
+        _height = command.arguments[3] as! Int
+        _above = command.arguments[4] as! Int
         if(self.prepScanner(command: command)){
             nextScanningCommand = command
             scanning = true
@@ -376,6 +442,7 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     @objc func destroy(_ command: CDVInvokedUrlCommand) {
         self.makeOpaque()
         if(self.captureSession != nil){
+            self.overlayView.removeOverlayLayer();
             backgroundThread(delay: 0, background: {
                 self.captureSession!.stopRunning()
                 self.cameraView.removePreviewLayer()
