@@ -452,10 +452,11 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     }
 
     @objc func destroy(_ command: CDVInvokedUrlCommand) {
-        self.makeOpaque()
-        if(self.overlayView != nil) {
-            self.overlayView.removeOverlayLayer();
-        }
+        // Restore opaque webview. Previous impl called makeOpaque() which is misnamed
+        // and actually leaves the webview transparent, letting anything underneath show through.
+        self.webView?.isOpaque = true
+        self.webView?.backgroundColor = UIColor.white
+
         if(self.captureSession != nil){
             self.captureSession!.stopRunning()
             self.cameraView.removePreviewLayer()
@@ -465,10 +466,23 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
             self.currentCamera = 0
             self.frontCamera = nil
             self.backCamera = nil
-            self.getStatus(command)
-        } else {
-            self.getStatus(command)
         }
+
+        // Previously only the sublayers/preview layer were removed; the CameraView and
+        // OverlayView UIViews were left in the webView.superview hierarchy. Every subsequent
+        // prepScanner() would allocate new views and insert them, accumulating orphans.
+        // Remove the views and clear the references so the next prepScanner starts clean.
+        if(self.overlayView != nil) {
+            self.overlayView.removeOverlayLayer()
+            self.overlayView.removeFromSuperview()
+            self.overlayView = nil
+        }
+        if(self.cameraView != nil) {
+            self.cameraView.removeFromSuperview()
+            self.cameraView = nil
+        }
+
+        self.getStatus(command)
     }
 
     @objc func getStatus(_ command: CDVInvokedUrlCommand){
