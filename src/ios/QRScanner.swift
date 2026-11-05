@@ -183,6 +183,11 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         }
         do {
             if (captureSession?.isRunning != true){
+                // iOS can stop the session on its own (interruption, thermal pressure, media
+                // services reset) without destroy() being called. Tear down the previous views
+                // and session first, otherwise the old CameraView is orphaned above the webview
+                // showing a frozen frame that nothing can remove.
+                self.tearDownSessionAndViews()
                 self.cameraView = CameraView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
                 if(_hideOverlay == 0) {
                     self.overlayView = OverlayView(frame: CGRect(x: _x, y: _y, width: _width, height: _height))
@@ -457,15 +462,24 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
         self.webView?.isOpaque = true
         self.webView?.backgroundColor = UIColor.white
 
+        self.tearDownSessionAndViews()
+        self.currentCamera = 0
+        self.frontCamera = nil
+        self.backCamera = nil
+
+        self.getStatus(command)
+    }
+
+    // Stops and releases the capture session and removes the CameraView/OverlayView from
+    // webView.superview. Leaves currentCamera untouched so useCamera() can switch cameras.
+    @objc func tearDownSessionAndViews() {
         if(self.captureSession != nil){
-            self.captureSession!.stopRunning()
-            self.cameraView.removePreviewLayer()
+            if(self.captureSession!.isRunning){
+                self.captureSession!.stopRunning()
+            }
             self.captureVideoPreviewLayer = nil
             self.metaOutput = nil
             self.captureSession = nil
-            self.currentCamera = 0
-            self.frontCamera = nil
-            self.backCamera = nil
         }
 
         // Previously only the sublayers/preview layer were removed; the CameraView and
@@ -478,11 +492,10 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
             self.overlayView = nil
         }
         if(self.cameraView != nil) {
+            self.cameraView.removePreviewLayer()
             self.cameraView.removeFromSuperview()
             self.cameraView = nil
         }
-
-        self.getStatus(command)
     }
 
     @objc func getStatus(_ command: CDVInvokedUrlCommand){
